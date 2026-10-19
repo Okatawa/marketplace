@@ -22,3 +22,12 @@ logs:
 	$(DC) logs -f --tail=50
 down:
 	$(DC) down
+seed:
+	go run ./cmd/seed
+smoke:
+	go test -tags=smoke ./tests/smoke -v -count=1
+test-integration:
+	go test -tags=integration ./tests/integration -v -count=1
+test-browser:
+	cd tests/browser && npm ci && npx playwright test
+check: lint test test-integration smoke

@@ -1,0 +1,9 @@
+import {test,expect} from '@playwright/test';
+test('публикация, безопасный текст и сохранение формы при ошибке',async({page})=>{
+ await page.goto('/'); await page.getByRole('link',{name:'Войти',exact:true}).click();await page.getByRole('link',{name:'Создать аккаунт'}).click();
+ await page.getByLabel('Имя').fill('Анна');await page.getByLabel('Email').fill(`browser-${Date.now()}@example.com`);await page.getByLabel('Пароль').fill('strong-password');await page.getByRole('button',{name:'Зарегистрироваться'}).click();
+ await page.getByRole('link',{name:'Подать объявление'}).click();await page.getByLabel('Название').fill('<img src=x onerror=alert(1)>');await page.getByLabel('Описание').fill('Горный велосипед в хорошем состоянии');await page.getByLabel('Цена, ₽').fill('15000');await page.getByLabel('Категория').selectOption('sport');await page.getByRole('button',{name:'Сохранить черновик'}).click();await expect(page.getByText('Изменения сохранены')).toBeVisible();
+ await page.getByLabel('Добавить фотографию').setInputFiles({name:'photo.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=','base64')});
+ await expect(page.getByAltText('Фото объявления')).toBeVisible();await page.getByRole('button',{name:'Опубликовать',exact:true}).click();await expect(page.getByText('Опубликовано',{exact:true})).toBeVisible();
+ await page.route('**/api/v1/listings/*',async route=>{if(route.request().method()==='PATCH')return route.fulfill({status:500,contentType:'application/json',body:'{"error":{"message":"Тестовая ошибка"}}'});return route.continue()});await page.getByLabel('Название').fill('Текст не должен потеряться');await page.getByRole('button',{name:'Сохранить изменения'}).click();await expect(page.getByLabel('Название')).toHaveValue('Текст не должен потеряться');await expect(page.getByText('Тестовая ошибка')).toBeVisible();
+});

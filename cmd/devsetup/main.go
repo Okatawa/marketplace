@@ -35,7 +35,7 @@ func setup(dir string) error {
 	if err != nil {
 		return err
 	}
-	_, err = fmt.Fprintf(f, "POSTGRES_PASSWORD=%s\nAPP_DB_PASSWORD=%s\nJWT_PRIVATE_KEY=%s\nJWT_PUBLIC_KEY=%s\nSERVICE_TOKEN=%s\nS3_ACCESS_KEY=marketplace\nS3_SECRET_KEY=%s\n", secret(), secret(), base64.StdEncoding.EncodeToString(priv), base64.StdEncoding.EncodeToString(pub), secret(), secret())
+	_, err = fmt.Fprintf(f, "POSTGRES_PASSWORD=%s\nAPP_DB_PASSWORD=%s\nJWT_PRIVATE_KEY=%s\nJWT_PUBLIC_KEY=%s\nSERVICE_TOKEN=%s\nS3_ACCESS_KEY=marketplace\nS3_SECRET_KEY=%s\nDEMO_PASSWORD=%s\n", secret(), secret(), base64.StdEncoding.EncodeToString(priv), base64.StdEncoding.EncodeToString(pub), secret(), secret(), secret())
 	return err
 }
 func main() {
