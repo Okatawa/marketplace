@@ -1,0 +1,9 @@
+.local/
+.superpowers/
+bin/
+node_modules/
+test-results/
+playwright-report/
+.env
+.DS_Store
+coverage.out
