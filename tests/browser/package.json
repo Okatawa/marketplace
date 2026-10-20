@@ -1,1 +1,14 @@
-{"name":"marketplace-browser-tests","private":true,"type":"module","scripts":{"test":"playwright test"},"devDependencies":{"@playwright/test":"1.56.1"}}
+{
+  "name": "marketplace-browser-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@apidevtools/swagger-parser": "12.1.0",
+    "@playwright/test": "1.56.1",
+    "prettier": "3.6.2",
+    "yaml": "2.8.1"
+  }
+}

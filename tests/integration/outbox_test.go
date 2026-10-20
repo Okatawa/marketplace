@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
+	"strings"
 	"testing"
 	"time"
 )
@@ -51,8 +52,8 @@ func TestOutboxPublishAcceptedThenDBFailure(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	if e = outbox.Run(ctx, pool, producer, topic); e == nil {
-		t.Fatal("simulated update failure ignored")
+	if e = outbox.Run(ctx, pool, producer, topic); e == nil || !strings.Contains(e.Error(), "simulated lost DB") {
+		t.Fatal("expected simulated update failure, got", e)
 	}
 	client, e := kgo.NewClient(kgo.SeedBrokers("127.0.0.1:19092"), kgo.ConsumeTopics(topic), kgo.ConsumeResetOffset(kgo.NewOffset().AtStart()))
 	if e != nil {

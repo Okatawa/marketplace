@@ -130,7 +130,7 @@ services:
     build:
       context: .
       args: {SERVICE: search}
-    environment:
+    environment: &search-env
       HTTP_ADDR: :8080
       APP_ENV: development
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
@@ -243,6 +243,22 @@ services:
       POSTGRES_HOST: postgres:5432
     depends_on:
       postgres: {condition: service_healthy}
+
+  reindex:
+    profiles: [tools]
+    image: marketplace/reindex:dev
+    build:
+      context: .
+      args: {SERVICE: reindex}
+    environment: *search-env
+  replay:
+    profiles: [tools]
+    image: marketplace/replay:dev
+    build:
+      context: .
+      args: {SERVICE: replay}
+    environment:
+      KAFKA_BROKERS: kafka:9092
 
 volumes:
   postgres-data:

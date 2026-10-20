@@ -1,0 +1,14 @@
+{{- if .Values.workloads.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+data:
+  {{- range $key, $value := .Values.config }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  ACCOUNTS_URL: "http://{{ .Release.Name }}-accounts:8080"
+  LISTINGS_URL: "http://{{ .Release.Name }}-listings:8080"
+  SEARCH_URL: "http://{{ .Release.Name }}-search:8080"
+  MESSAGING_URL: "http://{{ .Release.Name }}-messaging:8080"
+{{- end }}

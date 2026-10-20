@@ -52,9 +52,10 @@ func (p *Producer) Publish(ctx context.Context, topic, key string, e Envelope) e
 }
 
 type Consumer struct {
-	Client       *kgo.Client
-	Producer     *Producer
-	Topic, Group string
+	Client          *kgo.Client
+	Producer        *Producer
+	Topic, Group    string
+	StopOnPermanent bool
 }
 
 func NewConsumer(brokers []string, topic, group string) (*Consumer, error) {
@@ -68,7 +69,7 @@ func NewConsumer(brokers []string, topic, group string) (*Consumer, error) {
 		c.Close()
 		return nil, e
 	}
-	return &Consumer{c, p, topic, group}, nil
+	return &Consumer{Client: c, Producer: p, Topic: topic, Group: group}, nil
 }
 func (c *Consumer) Close() { c.Client.AllowRebalance(); c.Client.Close(); c.Producer.Close() }
 func (c *Consumer) Run(ctx context.Context, handle func(context.Context, Envelope) error) error {
@@ -103,6 +104,10 @@ func (c *Consumer) Run(ctx context.Context, handle func(context.Context, Envelop
 				}
 				var permanent PermanentError
 				if errors.As(err, &permanent) {
+					if c.StopOnPermanent {
+						span.End()
+						return err
+					}
 					payload, _ := json.Marshal(map[string]any{"topic": record.Topic, "partition": record.Partition, "offset": record.Offset, "key": string(record.Key), "value": string(record.Value)})
 					dlq := &kgo.Record{Topic: c.Topic + "." + c.Group + ".dlq", Key: []byte(fmt.Sprintf("%s:%d:%d", record.Topic, record.Partition, record.Offset)), Value: payload}
 					err = c.Producer.Client.ProduceSync(work, dlq).FirstErr()

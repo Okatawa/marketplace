@@ -1,0 +1,208 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "image",
+    "services",
+    "config"
+  ],
+  "properties": {
+    "image": {
+      "type": "object",
+      "required": [
+        "registry",
+        "tag",
+        "pullPolicy"
+      ],
+      "properties": {
+        "registry": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tag": {
+          "type": "string",
+          "minLength": 1,
+          "not": {
+            "enum": [
+              "latest"
+            ]
+          }
+        },
+        "pullPolicy": {
+          "enum": [
+            "Always",
+            "IfNotPresent",
+            "Never"
+          ]
+        }
+      }
+    },
+    "services": {
+      "type": "object",
+      "required": [
+        "gateway",
+        "accounts",
+        "listings",
+        "search",
+        "messaging",
+        "notifications"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "gateway": {
+          "type": "object",
+          "required": [
+            "replicas",
+            "secret"
+          ],
+          "properties": {
+            "replicas": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            },
+            "secret": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "accounts": {
+          "type": "object",
+          "required": [
+            "replicas",
+            "secret"
+          ],
+          "properties": {
+            "replicas": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            },
+            "secret": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "listings": {
+          "type": "object",
+          "required": [
+            "replicas",
+            "secret"
+          ],
+          "properties": {
+            "replicas": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            },
+            "secret": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "search": {
+          "type": "object",
+          "required": [
+            "replicas",
+            "secret"
+          ],
+          "properties": {
+            "replicas": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            },
+            "secret": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "messaging": {
+          "type": "object",
+          "required": [
+            "replicas",
+            "secret"
+          ],
+          "properties": {
+            "replicas": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            },
+            "secret": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "notifications": {
+          "type": "object",
+          "required": [
+            "replicas",
+            "secret"
+          ],
+          "properties": {
+            "replicas": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            },
+            "secret": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "config": {
+      "type": "object",
+      "required": [
+        "APP_ENV",
+        "PUBLIC_URL",
+        "KAFKA_BROKERS"
+      ],
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "gateway": {
+      "type": "object",
+      "properties": {
+        "serviceType": {
+          "enum": [
+            "ClusterIP",
+            "NodePort"
+          ]
+        },
+        "nodePort": {
+          "type": "integer",
+          "minimum": 30000,
+          "maximum": 32767
+        }
+      }
+    },
+    "migrations": {
+      "type": "object",
+      "properties": {
+        "runID": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]{1,20}$"
+        },
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

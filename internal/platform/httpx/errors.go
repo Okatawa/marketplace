@@ -43,25 +43,34 @@ func Decode(w http.ResponseWriter, r *http.Request, dst any) error {
 }
 func Wrap(fn func(http.ResponseWriter, *http.Request) error) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Request-ID", RequestID(r))
+		ObserveRoute(r, r.Pattern)
 		if err := fn(w, r); err != nil {
-			var e *Error
-			var pg *pgconn.PgError
-			switch {
-			case errors.As(err, &e):
-			case errors.Is(err, pgx.ErrNoRows):
-				e = &Error{404, "not_found", "Не найдено", nil}
-			case errors.As(err, &pg) && pg.Code == "23505":
-				e = &Error{409, "conflict", "Запись уже существует", nil}
-			case errors.As(err, &pg) && (pg.Code == "22P02" || pg.Code == "23503"):
-				e = &Error{400, "validation", "Некорректный идентификатор", nil}
-			default:
-				slog.ErrorContext(r.Context(), "request failed", "error_type", errorType(err))
-				e = &Error{500, "internal", "Не удалось выполнить запрос", nil}
-			}
-			JSON(w, e.Status, map[string]any{"error": e, "request_id": w.Header().Get("X-Request-ID")})
+			WriteError(w, r, err)
 		}
 	}
 }
+
+// WriteError uses the same public error contract in handlers and middleware.
+func WriteError(w http.ResponseWriter, r *http.Request, err error) {
+	w.Header().Set("X-Request-ID", RequestID(r))
+	var e *Error
+	var pg *pgconn.PgError
+	switch {
+	case errors.As(err, &e):
+	case errors.Is(err, pgx.ErrNoRows):
+		e = &Error{404, "not_found", "Не найдено", nil}
+	case errors.As(err, &pg) && pg.Code == "23505":
+		e = &Error{409, "conflict", "Запись уже существует", nil}
+	case errors.As(err, &pg) && (pg.Code == "22P02" || pg.Code == "23503"):
+		e = &Error{400, "validation", "Некорректный идентификатор", nil}
+	default:
+		slog.ErrorContext(r.Context(), "request failed", "error_type", errorType(err))
+		e = &Error{500, "internal", "Не удалось выполнить запрос", nil}
+	}
+	JSON(w, e.Status, map[string]any{"error": e, "request_id": RequestID(r)})
+}
+
 func errorType(e error) string {
 	var pg *pgconn.PgError
 	if errors.As(e, &pg) {

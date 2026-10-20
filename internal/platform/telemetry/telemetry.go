@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"context"
+	"example.com/marketplace/internal/platform/httpx"
 	"fmt"
 	"github.com/felixge/httpsnoop"
 	"github.com/jackc/pgx/v5"
@@ -49,12 +50,17 @@ func WrapHTTP(next http.Handler, logger *slog.Logger, registry *prometheus.Regis
 	duration := prometheus.NewHistogramVec(prometheus.HistogramOpts{Name: "marketplace_http_duration_seconds", Help: "HTTP request duration", Buckets: prometheus.DefBuckets}, []string{"method", "route", "status"})
 	registry.MustRegister(duration)
 	return otelhttp.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r = httpx.WithRequestState(r)
+		w.Header().Set("X-Request-ID", httpx.RequestID(r))
 		m := httpsnoop.CaptureMetrics(next, w, r)
-		route := r.Pattern
-		if route == "" {
-			route = "unmatched"
+		route := httpx.Route(r)
+		method := r.Method
+		switch method {
+		case "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS":
+		default:
+			method = "OTHER"
 		}
-		duration.WithLabelValues(r.Method, route, fmt.Sprint(m.Code)).Observe(m.Duration.Seconds())
+		duration.WithLabelValues(method, route, fmt.Sprint(m.Code)).Observe(m.Duration.Seconds())
 		if strings.HasPrefix(r.URL.Path, "/health/") {
 			return
 		}

@@ -3,13 +3,14 @@ package gateway
 import (
 	"embed"
 	"net/http"
+	"net/url"
 	"path"
 )
 
 //go:embed web/*
 var assets embed.FS
 
-func serveWeb(w http.ResponseWriter, r *http.Request) {
+func serveWeb(w http.ResponseWriter, r *http.Request, imageEndpoint string) {
 	if r.Method != "GET" && r.Method != "HEAD" {
 		http.NotFound(w, r)
 		return
@@ -37,6 +38,10 @@ func serveWeb(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Referrer-Policy", "same-origin")
-	w.Header().Set("Content-Security-Policy", "default-src 'self'; img-src 'self' http://127.0.0.1:9000 https: blob:; style-src 'self'; script-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'")
+	imageOrigin := ""
+	if u, err := url.Parse(imageEndpoint); err == nil && u.Host != "" && (u.Scheme == "http" || u.Scheme == "https") {
+		imageOrigin = u.Scheme + "://" + u.Host
+	}
+	w.Header().Set("Content-Security-Policy", "default-src 'self'; img-src 'self' "+imageOrigin+" blob:; style-src 'self'; script-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'")
 	w.Write(b)
 }

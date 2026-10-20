@@ -1,0 +1,24 @@
+image:
+  tag: dev
+  pullPolicy: Never
+services:
+  gateway: {replicas: 1}
+  accounts: {replicas: 1}
+  listings: {replicas: 1}
+  search: {replicas: 1}
+  messaging: {replicas: 1}
+  notifications: {replicas: 1}
+config:
+  APP_ENV: development
+  PUBLIC_URL: http://127.0.0.1:18080
+  KAFKA_BROKERS: kafka:9092
+  KAFKA_TLS: "false"
+  S3_ENDPOINT: http://storage:9000
+  S3_PUBLIC_ENDPOINT: http://127.0.0.1:19000
+  S3_BUCKET: photos
+  SMTP_ADDR: mailpit:1025
+  SMTP_FROM: marketplace@localhost
+gateway:
+  serviceType: NodePort
+networkPolicy:
+  enabled: false # kindnet does not enforce policies; use a policy-capable CNI in production.

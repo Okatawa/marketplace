@@ -7,7 +7,6 @@ import (
 	"example.com/marketplace/internal/platform/auth"
 	"example.com/marketplace/internal/platform/config"
 	"example.com/marketplace/internal/platform/httpx"
-	"github.com/google/uuid"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"net"
 	"net/http"
@@ -69,21 +68,24 @@ func New(c config.Config) http.Handler {
 			if errors.Is(e, context.DeadlineExceeded) {
 				status = 504
 			}
-			httpx.JSON(w, status, map[string]any{"error": map[string]string{"code": "upstream", "message": "Сервис временно недоступен"}})
+			httpx.WriteError(w, r, httpx.Fail(status, "upstream", "Сервис временно недоступен"))
 		}
 		for _, pattern := range patterns {
-			mux.Handle(pattern, p)
+			mux.Handle(pattern, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				httpx.ObserveRoute(r, pattern)
+				p.ServeHTTP(w, r)
+			}))
 		}
 	}
 	v, e := auth.FromBase64(c.JWTPublic)
 	if e != nil {
 		panic(e)
 	}
-	api := v.Optional(mux)
+	api := v.Optional(httpx.JSONMux(mux))
 	l := &limiter{entries: map[string]bucket{}}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.HasPrefix(r.URL.Path, "/api/") {
-			serveWeb(w, r)
+			serveWeb(w, r, c.S3PublicEndpoint)
 			return
 		}
 		ip, _, _ := net.SplitHostPort(r.RemoteAddr)
@@ -95,18 +97,13 @@ func New(c config.Config) http.Handler {
 		}
 		if !l.allow(key, max) {
 			w.Header().Set("Retry-After", "60")
-			httpx.JSON(w, 429, map[string]any{"error": map[string]string{"code": "rate_limit", "message": "Слишком много запросов. Подождите минуту"}})
+			httpx.WriteError(w, r, httpx.Fail(429, "rate_limit", "Слишком много запросов. Подождите минуту"))
 			return
 		}
 		for _, h := range []string{"X-User-ID", "X-Forwarded-For", "X-Forwarded-Host", "X-Forwarded-Proto", "Forwarded", "X-Service-Token"} {
 			r.Header.Del(h)
 		}
-		id := r.Header.Get("X-Request-ID")
-		if _, e := uuid.Parse(id); e != nil {
-			id = uuid.NewString()
-		}
-		r.Header.Set("X-Request-ID", id)
-		w.Header().Set("X-Request-ID", id)
+		w.Header().Set("X-Request-ID", httpx.RequestID(r))
 		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 		defer cancel()
 		api.ServeHTTP(w, r.WithContext(ctx))

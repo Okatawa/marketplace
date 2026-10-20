@@ -3,6 +3,7 @@ package search
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"example.com/marketplace/internal/platform/config"
 	"example.com/marketplace/internal/platform/httpx"
 	"example.com/marketplace/internal/platform/kafka"
@@ -29,6 +30,29 @@ func Reindex(ctx context.Context, db *pgxpool.Pool, cfg config.Config, id string
 	}
 	defer p.Close()
 	admin := kadm.NewClient(p.Client)
+	topics, e := admin.ListTopics(ctx, topic)
+	if e != nil {
+		return e
+	}
+	source, ok := topics[topic]
+	if !ok || source.Err != nil || len(source.Partitions) == 0 {
+		return fmt.Errorf("source topic unavailable")
+	}
+	replicas := int16(1)
+	for _, part := range source.Partitions {
+		replicas = int16(len(part.Replicas))
+		break
+	}
+	retention := "604800000"
+	created, e := admin.CreateTopics(ctx, int32(len(source.Partitions)), replicas, map[string]*string{"retention.ms": &retention}, topic+"."+group+".dlq")
+	if e != nil {
+		return e
+	}
+	for _, result := range created {
+		if result.Err != nil {
+			return result.Err
+		}
+	}
 	start, e := admin.ListEndOffsets(ctx, topic)
 	if e != nil {
 		return e
@@ -51,11 +75,15 @@ func Reindex(ctx context.Context, db *pgxpool.Pool, cfg config.Config, id string
 		return e
 	}
 	defer consumer.Close()
+	// A rebuild must be complete. Normal consumers route poison messages to DLQ;
+	// the temporary rebuild consumer aborts instead of activating partial data.
+	consumer.StopOnPermanent = true
 	work, cancel := context.WithCancel(ctx)
 	defer cancel()
-	done := make(chan error, 1)
+	done := make(chan struct{})
+	var consumerErr error
 	projection := Projection{DB: db, ID: id}
-	go func() { done <- consumer.Run(work, projection.Apply) }()
+	go func() { consumerErr = consumer.Run(work, projection.Apply); close(done) }()
 	defer func() { cancel(); <-done }()
 	after := ""
 	for {
@@ -95,6 +123,11 @@ func Reindex(ctx context.Context, db *pgxpool.Pool, cfg config.Config, id string
 		return e
 	}
 	for {
+		select {
+		case <-done:
+			return fmt.Errorf("reindex consumer stopped: %w", consumerErr)
+		default:
+		}
 		lowest, e := admin.ListStartOffsets(ctx, topic)
 		if e != nil {
 			return e
@@ -127,6 +160,11 @@ func Reindex(ctx context.Context, db *pgxpool.Pool, cfg config.Config, id string
 		if !kafka.Pause(ctx, 250*time.Millisecond) {
 			return ctx.Err()
 		}
+	}
+	cancel()
+	<-done
+	if consumerErr != nil && !errors.Is(consumerErr, context.Canceled) {
+		return consumerErr
 	}
 	tx, e := db.Begin(ctx)
 	if e != nil {

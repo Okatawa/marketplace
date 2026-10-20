@@ -1,0 +1,30 @@
+{{- if .Values.workloads.enabled }}
+{{- range $name, $svc := .Values.services }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $.Release.Name }}-{{ $name }}
+  labels: {app.kubernetes.io/instance: {{ $.Release.Name }}, app.kubernetes.io/name: {{ $name }}}
+spec:
+  type: {{ if eq $name "gateway" }}{{ $.Values.gateway.serviceType }}{{ else }}ClusterIP{{ end }}
+  selector: {app.kubernetes.io/instance: {{ $.Release.Name }}, app.kubernetes.io/name: {{ $name }}}
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      {{- if and (eq $name "gateway") (eq $.Values.gateway.serviceType "NodePort") }}
+      nodePort: {{ $.Values.gateway.nodePort }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $.Release.Name }}-{{ $name }}-metrics
+  labels: {app.kubernetes.io/instance: {{ $.Release.Name }}, app.kubernetes.io/name: {{ $name }}}
+spec:
+  type: ClusterIP
+  selector: {app.kubernetes.io/instance: {{ $.Release.Name }}, app.kubernetes.io/name: {{ $name }}}
+  ports: [{name: metrics, port: 9090, targetPort: metrics}]
+{{- end }}
+{{- end }}

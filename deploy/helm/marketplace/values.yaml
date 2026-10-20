@@ -1,0 +1,43 @@
+image:
+  registry: marketplace
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+workloads:
+  enabled: true
+services:
+  gateway: {replicas: 2, secret: marketplace-gateway}
+  accounts: {replicas: 2, secret: marketplace-accounts}
+  listings: {replicas: 2, secret: marketplace-listings}
+  search: {replicas: 1, secret: marketplace-search}
+  messaging: {replicas: 2, secret: marketplace-messaging}
+  notifications: {replicas: 1, secret: marketplace-notifications}
+config:
+  APP_ENV: production
+  PUBLIC_URL: https://marketplace.example.com
+  KAFKA_BROKERS: kafka:9092
+  KAFKA_TLS: "true"
+  S3_ENDPOINT: https://s3.example.com
+  S3_PUBLIC_ENDPOINT: https://s3.example.com
+  S3_BUCKET: marketplace-photos
+  SMTP_ADDR: smtp.example.com:587
+  SMTP_FROM: marketplace@example.com
+  OTEL_EXPORTER_OTLP_ENDPOINT: ""
+resources:
+  requests: {cpu: 100m, memory: 64Mi}
+  limits: {cpu: "1", memory: 256Mi}
+ingress:
+  enabled: false
+  className: nginx
+  host: marketplace.example.com
+  tlsSecret: marketplace-tls
+gateway:
+  serviceType: ClusterIP
+  nodePort: 30080
+migrations:
+  enabled: false
+  runID: initial
+networkPolicy:
+  enabled: true
+  ingressNamespace: ingress-nginx
+  monitoringNamespace: observability

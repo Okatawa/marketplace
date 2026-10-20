@@ -1,0 +1,1424 @@
+openapi: 3.0.3
+info:
+  title: Рядом — Marketplace API
+  version: 0.1.0
+  description: Публичный Gateway и отдельные служебные API. Внутренние маршруты
+    через Gateway недоступны. Цены — целые копейки RUB, время — UTC RFC3339.
+    Ошибки бизнес-API имеют error.code/message и request_id.
+servers:
+  - url: http://127.0.0.1:8080
+paths:
+  /api/v1/auth/register:
+    post:
+      tags:
+        - Accounts
+      summary: Регистрация
+      operationId: post_api_v1_auth_register
+      responses:
+        "201":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security: []
+      description: Refresh token возвращается в HttpOnly cookie refresh (30 дней).
+        Access JWT действует 15 минут. Пароль ограничен 72 байтами bcrypt.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 12
+                  maxLength: 72
+                  format: password
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+              required:
+                - email
+                - password
+                - name
+  /api/v1/auth/login:
+    post:
+      tags:
+        - Accounts
+      summary: Вход
+      operationId: post_api_v1_auth_login
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security: []
+      description: Refresh token возвращается в HttpOnly cookie refresh (30 дней).
+        Access JWT действует 15 минут. Пароль ограничен 72 байтами bcrypt.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 12
+                  maxLength: 72
+                  format: password
+              required:
+                - email
+                - password
+  /api/v1/auth/refresh:
+    post:
+      tags:
+        - Accounts
+      summary: Обновить сессию
+      operationId: post_api_v1_auth_refresh
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security:
+        - refreshCookie: []
+      description: Origin должен точно совпадать с PUBLIC_URL. Refresh token
+        одноразовый; обновляйте сессию одним запросом одновременно.
+      parameters:
+        - name: Origin
+          in: header
+          required: true
+          schema:
+            type: string
+  /api/v1/auth/logout:
+    post:
+      tags:
+        - Accounts
+      summary: Выйти
+      operationId: post_api_v1_auth_logout
+      responses:
+        "204":
+          description: Успешно
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security:
+        - refreshCookie: []
+      description: Origin должен точно совпадать с PUBLIC_URL. Refresh token
+        одноразовый; обновляйте сессию одним запросом одновременно.
+      parameters:
+        - name: Origin
+          in: header
+          required: true
+          schema:
+            type: string
+  /api/v1/me:
+    get:
+      tags:
+        - Accounts
+      summary: Мой профиль
+      operationId: get_api_v1_me
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearer: []
+    patch:
+      tags:
+        - Accounts
+      summary: Изменить имя
+      operationId: patch_api_v1_me
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+              required:
+                - name
+  /api/v1/users/{id}:
+    get:
+      tags:
+        - Accounts
+      summary: Публичный профиль без email
+      operationId: get_api_v1_users_id
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+  /api/v1/categories:
+    get:
+      tags:
+        - Listings
+      summary: Категории
+      operationId: get_api_v1_categories
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                      required:
+                        - id
+                        - name
+                required:
+                  - items
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security: []
+  /api/v1/listings:
+    post:
+      tags:
+        - Listings
+      summary: Создать черновик
+      operationId: post_api_v1_listings
+      responses:
+        "201":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ListingInput"
+  /api/v1/listings/{id}:
+    get:
+      tags:
+        - Listings
+      summary: Карточка объявления
+      operationId: get_api_v1_listings_id
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security: []
+      description: Черновик доступен только владельцу с Bearer token; для остальных
+        404. Снятая карточка остаётся доступной.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+    patch:
+      tags:
+        - Listings
+      summary: Сохранить поля объявления
+      operationId: patch_api_v1_listings_id
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearer: []
+      description: Все поля передаются вместе. При устаревшем expected_version — 409;
+        перечитайте карточку и повторите осознанно.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  maxLength: 120
+                description:
+                  type: string
+                  maxLength: 10000
+                category_id:
+                  type: string
+                price_minor:
+                  type: integer
+                  format: int64
+                  minimum: 0
+                  maximum: 100000000000
+                expected_version:
+                  type: integer
+                  format: int64
+                  minimum: 1
+              required:
+                - title
+                - description
+                - category_id
+                - price_minor
+                - expected_version
+  /api/v1/listings/{id}/publish:
+    post:
+      tags:
+        - Listings
+      summary: Опубликовать
+      operationId: post_api_v1_listings_id_publish
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expected_version:
+                  type: integer
+                  format: int64
+                  minimum: 1
+              required:
+                - expected_version
+  /api/v1/listings/{id}/withdraw:
+    post:
+      tags:
+        - Listings
+      summary: Снять с продажи
+      operationId: post_api_v1_listings_id_withdraw
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expected_version:
+                  type: integer
+                  format: int64
+                  minimum: 1
+              required:
+                - expected_version
+  /api/v1/me/listings:
+    get:
+      tags:
+        - Listings
+      summary: Мои объявления
+      operationId: get_api_v1_me_listings
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Listing"
+                  next_cursor:
+                    type: string
+                required:
+                  - items
+                  - next_cursor
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearer: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: ""
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: Непрозрачный курсор из предыдущего ответа
+  /api/v1/listings/{id}/photos:
+    post:
+      tags:
+        - Listings
+      summary: Добавить фото
+      operationId: post_api_v1_listings_id_photos
+      responses:
+        "201":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Photo"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearer: []
+      description: JPEG/PNG до 5 MiB, до 20 млн пикселей; максимум 8 фотографий. MIME
+        проверяется по содержимому.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+                - file
+  /api/v1/listings/{id}/photos/{photo_id}:
+    delete:
+      tags:
+        - Listings
+      summary: Удалить фото
+      operationId: delete_api_v1_listings_id_photos_photo_id
+      responses:
+        "204":
+          description: Успешно
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearer: []
+      description: Последнюю фотографию опубликованного объявления удалить нельзя.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: photo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+    get:
+      tags:
+        - Listings
+      summary: Временная ссылка на фото
+      operationId: get_api_v1_listings_id_photos_photo_id
+      responses:
+        "302":
+          description: Успешно
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+              description: Подписанный S3 URL на 15 минут
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: photo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+  /api/v1/search:
+    get:
+      tags:
+        - Search
+      summary: Найти опубликованные объявления
+      operationId: get_api_v1_search
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Listing"
+                  page:
+                    type: integer
+                  has_more:
+                    type: boolean
+                required:
+                  - items
+                  - page
+                  - has_more
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security: []
+      description: "Асинхронная проекция: изменения появляются после доставки события
+        Kafka. Полнотекстовый поиск PostgreSQL с русской морфологией."
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: ""
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1
+          description: ""
+        - name: q
+          in: query
+          schema:
+            type: string
+            maxLength: 500
+          description: ""
+        - name: category_id
+          in: query
+          schema:
+            type: string
+          description: ""
+        - name: min_price
+          in: query
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+          description: Копейки
+        - name: max_price
+          in: query
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+            maximum: 100000000000
+          description: Копейки
+  /api/v1/conversations:
+    post:
+      tags:
+        - Messaging
+      summary: Открыть или найти существующий диалог
+      operationId: post_api_v1_conversations
+      responses:
+        "200":
+          description: Существующий диалог
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+        "201":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearer: []
+      description: Повторный запрос возвращает 200 и прежний диалог. Себе написать
+        нельзя. Новые диалоги — только по опубликованному объявлению;
+        существующие работают после снятия.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                listing_id:
+                  type: string
+                  format: uuid
+              required:
+                - listing_id
+    get:
+      tags:
+        - Messaging
+      summary: Мои диалоги
+      operationId: get_api_v1_conversations
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Conversation"
+                  next_cursor:
+                    type: string
+                required:
+                  - items
+                  - next_cursor
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearer: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: ""
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: Непрозрачный курсор из предыдущего ответа
+  /api/v1/conversations/{id}/messages:
+    get:
+      tags:
+        - Messaging
+      summary: Сообщения после курсора
+      operationId: get_api_v1_conversations_id_messages
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Message"
+                  next_cursor:
+                    type: string
+                  conversation:
+                    $ref: "#/components/schemas/Conversation"
+                required:
+                  - items
+                  - next_cursor
+                  - conversation
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearer: []
+      description: Курсор — непрозрачная для клиента строка sequence; начинайте с 0.
+        Повторяйте запрос с последним next_cursor для новых сообщений.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: ""
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: Непрозрачный курсор из предыдущего ответа
+    post:
+      tags:
+        - Messaging
+      summary: Отправить сообщение
+      operationId: post_api_v1_conversations_id_messages
+      responses:
+        "200":
+          description: Повторная доставка того же запроса
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+        "201":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearer: []
+      description: Повтор с тем же ключом и текстом возвращает исходное сообщение
+        (200). Другой текст с тем же ключом — 409.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                body:
+                  type: string
+                  minLength: 1
+                  maxLength: 4000
+              required:
+                - body
+  /internal/v1/users/{id}/notification-address:
+    get:
+      tags:
+        - Internal Accounts
+      summary: Email получателя
+      operationId: get_internal_v1_users_id_notification_address
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  email:
+                    type: string
+                    format: email
+                required:
+                  - email
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security:
+        - service: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      servers:
+        - url: http://accounts:8080
+  /internal/v1/listings/export:
+    get:
+      tags:
+        - Internal Listings
+      summary: Снимки всех объявлений кроме черновиков
+      operationId: get_internal_v1_listings_export
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Listing"
+                  next_cursor:
+                    type: string
+                required:
+                  - items
+                  - next_cursor
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security:
+        - service: []
+      description: Стабильная пагинация по ID для reindex; last UUID в next_cursor.
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: ""
+        - name: after_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: ""
+      servers:
+        - url: http://listings:8080
+  /internal/v1/listings/{id}:
+    get:
+      tags:
+        - Internal Listings
+      summary: Объявление для Messaging
+      operationId: get_internal_v1_listings_id
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security:
+        - service: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      servers:
+        - url: http://listings:8080
+components:
+  schemas:
+    Listing:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        owner_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          maxLength: 120
+        description:
+          type: string
+          maxLength: 10000
+        category_id:
+          type: string
+        price_minor:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 100000000000
+        status:
+          type: string
+          enum:
+            - draft
+            - published
+            - withdrawn
+        version:
+          type: integer
+          format: int64
+          minimum: 1
+        created_at:
+          type: string
+          format: date-time
+        photos:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              url:
+                type: string
+                format: uri-reference
+            required:
+              - id
+          nullable: true
+      required:
+        - id
+        - owner_id
+        - title
+        - description
+        - category_id
+        - price_minor
+        - status
+        - version
+        - created_at
+        - photos
+    ListingInput:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 120
+        description:
+          type: string
+          maxLength: 10000
+        category_id:
+          type: string
+        price_minor:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 100000000000
+      required:
+        - title
+        - description
+        - category_id
+        - price_minor
+    Photo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        url:
+          type: string
+          format: uri-reference
+      required:
+        - id
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        email:
+          type: string
+          format: email
+      required:
+        - id
+        - name
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        listing_id:
+          type: string
+          format: uuid
+        buyer_id:
+          type: string
+          format: uuid
+        seller_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        updated_at:
+          type: string
+          format: date-time
+        peer_name:
+          type: string
+        last_message:
+          type: string
+      required:
+        - id
+        - listing_id
+        - buyer_id
+        - seller_id
+        - title
+        - updated_at
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        seq:
+          type: integer
+          format: int64
+          minimum: 1
+        conversation_id:
+          type: string
+          format: uuid
+        sender_id:
+          type: string
+          format: uuid
+        body:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - seq
+        - conversation_id
+        - sender_id
+        - body
+        - created_at
+    Session:
+      type: object
+      properties:
+        access_token:
+          type: string
+      required:
+        - access_token
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            fields:
+              type: object
+              additionalProperties:
+                type: string
+          required:
+            - code
+            - message
+        request_id:
+          type: string
+      required:
+        - error
+        - request_id
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT EdDSA
+    service:
+      type: http
+      scheme: bearer
+      description: SERVICE_TOKEN, отдельный от пользовательского JWT
+    refreshCookie:
+      type: apiKey
+      in: cookie
+      name: refresh
+  responses:
+    Error:
+      description: Ошибка запроса; code стабилен, message предназначен пользователю
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"

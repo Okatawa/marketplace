@@ -1,0 +1,26 @@
+{{- if and .Values.workloads.enabled .Values.networkPolicy.enabled }}
+{{- range $name, $svc := .Values.services }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $.Release.Name }}-{{ $name }}
+spec:
+  podSelector:
+    matchLabels: {app.kubernetes.io/instance: {{ $.Release.Name }}, app.kubernetes.io/name: {{ $name }}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: {app.kubernetes.io/instance: {{ $.Release.Name }}}
+        {{- if eq $name "gateway" }}
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: {{ $.Values.networkPolicy.ingressNamespace }}}
+        {{- end }}
+      ports: [{port: 8080, protocol: TCP}]
+    - from:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: {{ $.Values.networkPolicy.monitoringNamespace }}}
+      ports: [{port: 9090, protocol: TCP}]
+{{- end }}
+{{- end }}

@@ -1,0 +1,28 @@
+groups:
+  - name: marketplace
+    rules:
+      - alert: ServiceUnavailable
+        expr: up{job="marketplace"} == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations: {summary: "Сервис {{ $labels.service }} недоступен для сбора метрик"}
+      - alert: OutboxStalled
+        expr: marketplace_outbox_oldest_seconds > 60
+        for: 2m
+        labels: {severity: warning}
+        annotations: {summary: "Outbox {{ $labels.service }} отстаёт"}
+      - alert: ConsumerBehind
+        expr: sum by (service, group) (marketplace_consumer_lag) > 100
+        for: 2m
+        labels: {severity: warning}
+        annotations: {summary: "Группа {{ $labels.group }} отстаёт"}
+      - alert: NotificationsFailed
+        expr: marketplace_notification_jobs{state="failed"} > 0
+        for: 1m
+        labels: {severity: warning}
+        annotations: {summary: "Есть окончательно неотправленные уведомления"}
+      - alert: HTTPServerErrors
+        expr: sum by(service) (rate(marketplace_http_duration_seconds_count{status=~"5.."}[5m])) / clamp_min(sum by(service) (rate(marketplace_http_duration_seconds_count[5m])), 0.001) > 0.05
+        for: 2m
+        labels: {severity: warning}
+        annotations: {summary: "Больше 5% ошибок HTTP в {{ $labels.service }}"}

@@ -30,7 +30,7 @@ func Run(ctx context.Context, db *pgxpool.Pool, p *kafka.Producer, topic string)
 	}
 	defer conn.Release()
 	var locked bool
-	if e = conn.QueryRow(ctx, "SELECT pg_try_advisory_lock(77191)").Scan(&locked); e != nil {
+	if e = conn.QueryRow(ctx, "SELECT pg_try_advisory_lock(hashtextextended(current_schema() || '.outbox', 0))").Scan(&locked); e != nil {
 		return e
 	}
 	if !locked {
@@ -39,7 +39,7 @@ func Run(ctx context.Context, db *pgxpool.Pool, p *kafka.Producer, topic string)
 	defer func() {
 		cleanup, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
-		if _, err := conn.Exec(cleanup, "SELECT pg_advisory_unlock(77191)"); err != nil {
+		if _, err := conn.Exec(cleanup, "SELECT pg_advisory_unlock(hashtextextended(current_schema() || '.outbox', 0))"); err != nil {
 			conn.Conn().Close(cleanup)
 		}
 	}()

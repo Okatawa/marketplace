@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "event_type": {
+          "const": "message.created"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "message_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "conversation_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "sender_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "recipient_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "message_id",
+            "conversation_id",
+            "sender_id",
+            "recipient_id"
+          ],
+          "additionalProperties": false
+        }
+      }
+    }
+  ]
+}

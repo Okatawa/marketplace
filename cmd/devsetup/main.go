@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func secret() string {
@@ -25,6 +26,22 @@ func setup(dir string) error {
 	p := filepath.Join(dir, ".env")
 	f, err := os.OpenFile(p, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
 	if os.IsExist(err) {
+		raw, err := os.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		f, err := os.OpenFile(p, os.O_WRONLY|os.O_APPEND, 0600)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		for _, key := range []string{"DEMO_PASSWORD", "GRAFANA_PASSWORD"} {
+			if !strings.Contains("\n"+string(raw), "\n"+key+"=") {
+				if _, err := fmt.Fprintf(f, "\n%s=%s\n", key, secret()); err != nil {
+					return err
+				}
+			}
+		}
 		return nil
 	}
 	if err != nil {
@@ -35,7 +52,7 @@ func setup(dir string) error {
 	if err != nil {
 		return err
 	}
-	_, err = fmt.Fprintf(f, "POSTGRES_PASSWORD=%s\nAPP_DB_PASSWORD=%s\nJWT_PRIVATE_KEY=%s\nJWT_PUBLIC_KEY=%s\nSERVICE_TOKEN=%s\nS3_ACCESS_KEY=marketplace\nS3_SECRET_KEY=%s\nDEMO_PASSWORD=%s\n", secret(), secret(), base64.StdEncoding.EncodeToString(priv), base64.StdEncoding.EncodeToString(pub), secret(), secret(), secret())
+	_, err = fmt.Fprintf(f, "POSTGRES_PASSWORD=%s\nAPP_DB_PASSWORD=%s\nJWT_PRIVATE_KEY=%s\nJWT_PUBLIC_KEY=%s\nSERVICE_TOKEN=%s\nS3_ACCESS_KEY=marketplace\nS3_SECRET_KEY=%s\nDEMO_PASSWORD=%s\nGRAFANA_PASSWORD=%s\n", secret(), secret(), base64.StdEncoding.EncodeToString(priv), base64.StdEncoding.EncodeToString(pub), secret(), secret(), secret(), secret())
 	return err
 }
 func main() {

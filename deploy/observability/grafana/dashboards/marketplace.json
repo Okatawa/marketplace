@@ -1,0 +1,145 @@
+{
+  "uid": "marketplace",
+  "title": "Рядом · сервисы",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "HTTP p95, секунды",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, service) (rate(marketplace_http_duration_seconds_bucket[5m])))",
+          "refId": "A",
+          "legendFormat": "{{service}} {{status}} {{state}} {{group}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "HTTP запросы/с",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum by(service, status) (rate(marketplace_http_duration_seconds_count[5m]))",
+          "refId": "A",
+          "legendFormat": "{{service}} {{status}} {{state}} {{group}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Outbox: события",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "targets": [
+        {
+          "expr": "marketplace_outbox_pending",
+          "refId": "A",
+          "legendFormat": "{{service}} {{status}} {{state}} {{group}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Outbox: возраст, секунды",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "targets": [
+        {
+          "expr": "marketplace_outbox_oldest_seconds",
+          "refId": "A",
+          "legendFormat": "{{service}} {{status}} {{state}} {{group}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Kafka: lag",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
+      "targets": [
+        {
+          "expr": "sum by(service, group) (marketplace_consumer_lag)",
+          "refId": "A",
+          "legendFormat": "{{service}} {{status}} {{state}} {{group}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Уведомления",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      },
+      "targets": [
+        {
+          "expr": "marketplace_notification_jobs",
+          "refId": "A",
+          "legendFormat": "{{service}} {{status}} {{state}} {{group}}"
+        }
+      ]
+    }
+  ]
+}

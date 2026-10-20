@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "event_type": {
+          "const": "listing.changed"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "owner_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "title": {
+              "type": "string",
+              "maxLength": 120
+            },
+            "description": {
+              "type": "string",
+              "maxLength": 10000
+            },
+            "category_id": {
+              "type": "string"
+            },
+            "price_minor": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0,
+              "maximum": 100000000000
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "published",
+                "withdrawn"
+              ]
+            },
+            "version": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "photos": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              }
+            }
+          },
+          "required": [
+            "id",
+            "owner_id",
+            "title",
+            "description",
+            "category_id",
+            "price_minor",
+            "status",
+            "version",
+            "created_at",
+            "photos"
+          ]
+        }
+      }
+    }
+  ]
+}

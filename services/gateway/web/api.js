@@ -1,5 +1,73 @@
-let access='';let refreshing=null;
-export async function refresh(){if(!refreshing)refreshing=(async()=>{const r=await fetch('/api/v1/auth/refresh',{method:'POST',credentials:'same-origin'});if(!r.ok){access='';return false}access=(await r.json()).access_token;return true})().finally(()=>{refreshing=null});return refreshing}
-export async function request(path,options={},retry=true){const headers=new Headers(options.headers||{});if(access)headers.set('Authorization','Bearer '+access);let body=options.body;if(body!==undefined&&!(body instanceof FormData)){headers.set('Content-Type','application/json');body=JSON.stringify(body)}const response=await fetch('/api/v1'+path,{...options,body,headers,credentials:'same-origin'});if(response.status===401&&retry&&!path.startsWith('/auth/')&&await refresh())return request(path,options,false);const data=response.status===204?null:await response.json().catch(()=>({error:{message:'Сервис временно недоступен'}}));if(!response.ok){const err=new Error(data?.error?.message||'Не удалось выполнить запрос');err.status=response.status;throw err}if(data?.access_token)access=data.access_token;return data}
-export async function logout(){await request('/auth/logout',{method:'POST'});access=''}
-export async function currentUser(){try{return await request('/me')}catch{return null}}
+let access = "";
+let refreshing = null;
+let sessionRequests = new AbortController();
+export async function refresh() {
+  if (!refreshing)
+    refreshing = (async () => {
+      const r = await fetch("/api/v1/auth/refresh", {
+        method: "POST",
+        credentials: "same-origin",
+        signal: sessionRequests.signal,
+      });
+      if (!r.ok) {
+        access = "";
+        return false;
+      }
+      access = (await r.json()).access_token;
+      return true;
+    })().finally(() => {
+      refreshing = null;
+    });
+  return refreshing;
+}
+export async function request(path, options = {}, retry = true) {
+  const headers = new Headers(options.headers || {});
+  const sentAccess = access;
+  if (access && !path.startsWith("/auth/"))
+    headers.set("Authorization", "Bearer " + access);
+  let body = options.body;
+  if (body !== undefined && !(body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+    body = JSON.stringify(body);
+  }
+  const response = await fetch("/api/v1" + path, {
+    ...options,
+    body,
+    headers,
+    credentials: "same-origin",
+    signal: options.signal || sessionRequests.signal,
+  });
+  if (response.status === 401 && retry && !path.startsWith("/auth/")) {
+    // Another request may already have refreshed while this 401 was in flight.
+    if ((access && access !== sentAccess) || (await refresh()))
+      return request(path, options, false);
+  }
+  const data =
+    response.status === 204
+      ? null
+      : await response
+          .json()
+          .catch(() => ({ error: { message: "Сервис временно недоступен" } }));
+  if (!response.ok) {
+    const err = new Error(
+      data?.error?.message || "Не удалось выполнить запрос",
+    );
+    err.status = response.status;
+    throw err;
+  }
+  if (data?.access_token) access = data.access_token;
+  return data;
+}
+export async function logout() {
+  await request("/auth/logout", { method: "POST" });
+  sessionRequests.abort();
+  sessionRequests = new AbortController();
+  access = "";
+}
+export async function currentUser() {
+  try {
+    return await request("/me");
+  } catch {
+    return null;
+  }
+}

@@ -52,12 +52,12 @@ func (v *Verifier) Optional(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if raw := r.Header.Get("Authorization"); raw != "" {
 			if !strings.HasPrefix(raw, "Bearer ") {
-				httpx.JSON(w, 401, map[string]any{"error": map[string]string{"code": "unauthorized", "message": "Войдите в аккаунт"}})
+				httpx.WriteError(w, r, httpx.Fail(401, "unauthorized", "Войдите в аккаунт"))
 				return
 			}
 			c, e := v.Verify(strings.TrimPrefix(raw, "Bearer "))
 			if e != nil {
-				httpx.JSON(w, 401, map[string]any{"error": map[string]string{"code": "unauthorized", "message": "Сессия истекла"}})
+				httpx.WriteError(w, r, httpx.Fail(401, "unauthorized", "Сессия истекла"))
 				return
 			}
 			r = r.WithContext(context.WithValue(r.Context(), userKey{}, c.UserID))
