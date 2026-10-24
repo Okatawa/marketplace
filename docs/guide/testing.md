@@ -17,10 +17,13 @@
 | `make test-browser` | Поведение веб-интерфейса в Chromium | Весь стенд, Node.js/npm, установленный Chromium Playwright | Пользовательские данные, письмо, скриншот, файлы Playwright и `node_modules` |
 | `make test-resilience` | Публикация при остановленной Kafka и догоняющий Search | Весь локальный Compose-стенд, Docker CLI | Останавливает/запускает Kafka и Search; создаёт пользовательские данные |
 | `make contracts-check` | Структура OpenAPI и отдельных JSON Schema событий | Node.js и зависимости `tests/browser` | Стенд не изменяет |
+| `make observability-check` | Запросы всех панелей через Grafana и наличие числовых метрик outbox | Стенд после `make observability-up`, Node.js; npm-зависимости не нужны | Данные приложения не изменяет |
 | `make helm-check` | Рендер Helm, свойства манифестов и Kubernetes-схемы | Helm, kubeconform, Node.js и зависимости `tests/browser` | Файлы `.local/helm-*.yaml`; ничего не применяет к кластеру |
 | `make kind-smoke` | Тот же smoke через Gateway локального kind | Уже поднятый kind-стенд и доступные порты | Данные приложения внутри kind |
 
-`make check` запускает только `lint`, `test`, `test-integration`, `smoke`. Он не устанавливает и не поднимает зависимости и не включает браузер, resilience, contracts или Helm. Для последовательного учебного запуска не используйте `make -j`: одновременная остановка Kafka и smoke создаст ложные сбои.
+`make check` запускает только `lint`, `test`, `test-integration`, `smoke`. Он не устанавливает и не поднимает зависимости и не включает браузер, resilience, contracts, Helm или observability. Для последовательного учебного запуска не используйте `make -j`: одновременная остановка Kafka и smoke создаст ложные сбои.
+
+Проверка наблюдаемости описана в [инструкции локального запуска](../runbooks/local-development.md#метрики-и-цепочки-запросов). Она проверяет путь Grafana → Prometheus, но не внешний вид графиков в браузере. Исходник: [`check-observability.mjs`](../../tests/browser/check-observability.mjs).
 
 ## 1. Начать с проверок без инфраструктуры
 

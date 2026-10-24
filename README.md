@@ -86,6 +86,7 @@ make logs               # JSON-логи всех сервисов
 make down               # остановить стенд, сохранив тома с данными
 make up                 # пересобрать изменённый код и запустить
 make observability-up   # добавить Collector, Jaeger, Prometheus и Grafana
+make observability-check # проверить запросы панелей Grafana; нужен Node.js
 ```
 
 После подключения наблюдаемости: [Grafana](http://127.0.0.1:13000), [Jaeger](http://127.0.0.1:16686), [Prometheus](http://127.0.0.1:19090). Логи пишутся через `log/slog` в stdout; OpenTelemetry переносит контекст и экспортирует **трассировки**. Логовое хранилище вроде Loki в стенд не включено.

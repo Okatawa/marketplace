@@ -34,6 +34,9 @@ services:
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
       GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      # Keep the bundled Prometheus plugin; startup updates can unregister it
+      # while waiting for an external download and break all dashboard queries.
+      GF_PLUGINS_PREINSTALL_AUTO_UPDATE: "false"
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:?run make setup}
     volumes:
       - ./deploy/observability/grafana/provisioning:/etc/grafana/provisioning:ro
